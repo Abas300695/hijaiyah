@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Game Edukasi Hijaiyah</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            /* Menggunakan dvh untuk mengatasi masalah address bar di browser mobile */
+            min-height: 100dvh; 
+        }
+        .arab-text {
+            font-family: 'Amiri', serif;
+            direction: rtl;
+        }
+        
+        .mode-btn { transition: all 0.2s ease; }
+        .mode-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .mode-btn:active { transform: translateY(1px) scale(0.98); }
+
+        .option-btn {
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            background-color: #f3f4f6;
+        }
+        .option-btn:active:not(:disabled) { transform: translateY(0); }
+        
+        .correct { background-color: #10B981 !important; color: white !important; border-color: #059669 !important; }
+        .wrong { background-color: #EF4444 !important; color: white !important; border-color: #DC2626 !important; }
+        
+        .animate-pop { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .heart-pulse { animation: pulse 1.5s infinite; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        #questionText { transition: all 0.3s ease; }
+
+        /* Custom Scrollbar yang bekerja baik di Desktop/Mobile */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; sm:width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #818cf8; }
+    </style>
+</head>
+
+<body class="flex items-center justify-center p-2 sm:p-4 md:p-6 lg:p-8">
+
+    <!-- Container aplikasi diperlebar (max-w-4xl) untuk Laptop, dan mengisi layar h-[98dvh] di Mobile -->
+    <div class="w-full max-w-4xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden animate-pop flex flex-col h-[98dvh] max-h-[850px]">
+        
+        <!-- Header -->
+        <div class="bg-indigo-600 p-4 sm:p-6 text-center text-white relative flex-shrink-0">
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2 px-10 sm:px-20">Mari Belajar Hijaiyah</h1>
+            <p class="text-sm sm:text-base text-indigo-100 opacity-90">Bermain sambil belajar membaca Al-Qur'an</p>
+            
+            <!-- Tombol navigasi ukurannya disesuaikan agar mudah di-tap di HP -->
+            <button id="backBtn" class="hidden absolute top-3 sm:top-5 left-3 sm:left-4 bg-indigo-500 hover:bg-indigo-700 text-white rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center transition-colors shadow-md text-sm sm:text-base">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button id="homeBtn" class="hidden absolute top-3 sm:top-5 left-12 sm:left-16 bg-indigo-500 hover:bg-indigo-700 text-white rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center transition-colors shadow-md text-sm sm:text-base">
+                <i class="fas fa-home"></i>
+            </button>
+        </div>
+
+        <!-- Home Screen (Pilihan Utama) -->
+        <div id="homeScreen" class="p-4 sm:p-6 md:p-8 animate-pop flex flex-col justify-center flex-grow">
+            <h2 class="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 mb-6 sm:mb-8 text-center">Pilih Aktivitas</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8 max-w-3xl mx-auto w-full">
+                <button onclick="showLearnMenu()" class="mode-btn bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 text-emerald-700 font-bold py-6 sm:py-10 px-4 rounded-3xl flex flex-col items-center justify-center text-center group shadow-sm h-full">
+                    <i class="fas fa-book-reader text-5xl sm:text-6xl md:text-7xl mb-3 sm:mb-5 text-emerald-500 group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="text-xl sm:text-2xl md:text-3xl">Belajar Huruf</span>
+                    <span class="text-xs sm:text-sm md:text-base font-normal text-emerald-600 mt-2">Mengenal bentuk & nama</span>
+                </button>
+                <button onclick="showPlayMenu()" class="mode-btn bg-indigo-50 hover:bg-indigo-100 border-2 border-indigo-200 text-indigo-700 font-bold py-6 sm:py-10 px-4 rounded-3xl flex flex-col items-center justify-center text-center group shadow-sm h-full">
+                    <i class="fas fa-gamepad text-5xl sm:text-6xl md:text-7xl mb-3 sm:mb-5 text-indigo-500 group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="text-xl sm:text-2xl md:text-3xl">Mulai Bermain</span>
+                    <span class="text-xs sm:text-sm md:text-base font-normal text-indigo-600 mt-2">Uji kemampuan membacamu</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Learn Menu (Mode Pembelajaran) -->
+        <div id="learnMenu" class="hidden p-4 sm:p-6 overflow-y-auto custom-scrollbar animate-pop flex-grow bg-slate-50/50">
+            <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-4 sm:mb-6 text-center border-b-2 border-indigo-50 pb-3 sm:pb-4">Daftar Huruf Hijaiyah</h2>
+            <!-- Grid dinamis: 2 kolom HP sangat kecil, 3 HP besar, 4 Tablet, 5 Laptop -->
+            <div id="learnGrid" class="grid grid-cols-2 min-[400px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-5 pb-6 px-1 sm:px-2">
+                <!-- Grid huruf akan di-generate otomatis via JS -->
+            </div>
+        </div>
+
+        <!-- Play Menu (Mode Permainan) -->
+        <div id="playMenu" class="hidden p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-grow pb-8 bg-slate-50/50">
+            <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-4 sm:mb-6 text-center border-b-2 border-indigo-50 pb-3 sm:pb-4">Pilih Mode Permainan</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 max-w-4xl mx-auto pb-2 px-1">
+                <button onclick="startGame(1)" class="mode-btn bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-2xl flex items-center justify-between text-left">
+                    <span class="flex items-center text-sm sm:text-base md:text-lg"><i class="fas fa-font text-xl sm:text-2xl w-6 sm:w-8 mr-2 sm:mr-3 text-blue-500"></i> 1. Pengenalan Huruf</span>
+                    <i class="fas fa-chevron-right text-blue-300"></i>
+                </button>
+                <button onclick="startGame(2)" class="mode-btn bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-2xl flex items-center justify-between text-left">
+                    <span class="flex items-center text-sm sm:text-base md:text-lg"><i class="fas fa-pen-fancy text-xl sm:text-2xl w-6 sm:w-8 mr-2 sm:mr-3 text-green-500"></i> 2. Huruf Berharakat</span>
+                    <i class="fas fa-chevron-right text-green-300"></i>
+                </button>
+                <button onclick="startGame(3)" class="mode-btn bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-2xl flex items-center justify-between text-left">
+                    <span class="flex items-center text-sm sm:text-base md:text-lg"><i class="fas fa-puzzle-piece text-xl sm:text-2xl w-6 sm:w-8 mr-2 sm:mr-3 text-purple-500"></i> 3. Kata (Huruf Dipisah)</span>
+                    <i class="fas fa-chevron-right text-purple-300"></i>
+                </button>
+                <button onclick="startGame(4)" class="mode-btn bg-pink-50 hover:bg-pink-100 border border-pink-200 text-pink-700 font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-2xl flex items-center justify-between text-left">
+                    <span class="flex items-center text-sm sm:text-base md:text-lg"><i class="fas fa-link text-xl sm:text-2xl w-6 sm:w-8 mr-2 sm:mr-3 text-pink-500"></i> 4. Kata (Huruf Digabung)</span>
+                    <i class="fas fa-chevron-right text-pink-300"></i>
+                </button>
+                <button onclick="startGame(5)" class="mode-btn bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-yellow-700 font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-2xl flex items-center justify-between text-left md:col-span-2">
+                    <span class="flex items-center text-sm sm:text-base md:text-lg"><i class="fas fa-align-right text-xl sm:text-2xl w-6 sm:w-8 mr-2 sm:mr-3 text-yellow-500"></i> 5. Membaca Kalimat Arab</span>
+                    <i class="fas fa-chevron-right text-yellow-300"></i>
+                </button>
+                <button onclick="startGame(6)" class="mode-btn bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-700 font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-2xl flex items-center justify-between text-left md:col-span-2">
+                    <span class="flex items-center text-sm sm:text-base md:text-lg"><i class="fas fa-book-open text-xl sm:text-2xl w-6 sm:w-8 mr-2 sm:mr-3 text-teal-500"></i> 6. Membaca Ayat Qur'an</span>
+                    <i class="fas fa-chevron-right text-teal-300"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div id="gameArea" class="hidden p-4 sm:p-6 flex-grow overflow-y-auto custom-scrollbar pb-8 bg-slate-50/50">
+            
+            <!-- Panel Status -->
+            <div class="flex justify-between items-center mb-4 sm:mb-6 px-3 sm:px-5 py-2 sm:py-3 bg-white rounded-xl border border-gray-100 shadow-sm max-w-4xl mx-auto w-full">
+                <div class="flex items-center text-rose-500 font-bold text-sm sm:text-lg">
+                    <i class="fas fa-heart mr-1 sm:mr-2 heart-pulse"></i> 
+                    <span id="lives">3</span>
+                </div>
+                
+                <div class="text-indigo-600 font-semibold text-xs sm:text-sm bg-indigo-50 px-2 sm:px-4 py-1 sm:py-1.5 rounded-full border border-indigo-100">
+                    Soal <span id="progressIndicator">1/10</span>
+                </div>
+
+                <div class="flex items-center text-amber-500 font-bold text-sm sm:text-lg">
+                    <i class="fas fa-star mr-1 sm:mr-2"></i>
+                    <span id="score">0</span>
+                </div>
+            </div>
+
+            <!-- Area Soal (Ketinggiannya dinamis tergantung layar) -->
+            <div class="bg-indigo-50/80 rounded-2xl p-6 sm:p-8 md:p-10 mb-4 sm:mb-6 shadow-inner border border-indigo-100 flex items-center justify-center min-h-[140px] sm:min-h-[180px] md:min-h-[220px] max-w-4xl mx-auto w-full">
+                <h2 id="questionText" class="arab-text font-bold text-indigo-900 text-center leading-tight"></h2>
+            </div>
+
+            <!-- Opsi Jawaban (2 kolom di layar yang agak besar, 1 kolom di HP sempit) -->
+            <div id="optionsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-4xl mx-auto w-full">
+                <!-- Buttons will be generated here -->
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="hidden p-6 sm:p-8 text-center bg-gray-50 flex-grow overflow-y-auto custom-scrollbar flex flex-col justify-center">
+            <div class="text-rose-500 mb-3 sm:mb-4 animate-bounce">
+                <i class="fas fa-times-circle text-5xl sm:text-6xl md:text-7xl"></i>
+            </div>
+            <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Yah, Permainan Selesai!</h2>
+            <p class="text-gray-600 mb-4 sm:mb-6 text-base sm:text-lg">Nyawa kamu habis. Skor akhirmu adalah:</p>
+            <div class="text-5xl sm:text-6xl md:text-7xl font-black text-amber-500 mb-6 sm:mb-8 drop-shadow-md" id="finalScore">0</div>
+            
+            <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 max-w-md mx-auto w-full">
+                <button onclick="initGame()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl shadow-lg transition-transform hover:-translate-y-1 w-full text-base sm:text-lg">
+                    <i class="fas fa-redo mr-2"></i> Ulangi Level Ini
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Win Screen -->
+        <div id="gameWinScreen" class="hidden p-6 sm:p-8 text-center bg-gray-50 flex-grow overflow-y-auto custom-scrollbar flex flex-col justify-center">
+            <div class="text-amber-400 mb-3 sm:mb-4 animate-bounce">
+                <i class="fas fa-trophy text-5xl sm:text-6xl md:text-7xl drop-shadow-lg"></i>
+            </div>
+            <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Luar Biasa!</h2>
+            <p class="text-gray-600 mb-4 sm:mb-6 text-base sm:text-lg">Kamu berhasil menyelesaikan mode ini dengan sempurna!</p>
+            <div class="text-5xl sm:text-6xl md:text-7xl font-black text-amber-500 mb-6 sm:mb-8 drop-shadow-md" id="winScore">0</div>
+            
+            <div class="flex justify-center max-w-md mx-auto w-full">
+                <button onclick="showPlayMenu()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl shadow-lg transition-transform hover:-translate-y-1 w-full text-base sm:text-lg">
+                    <i class="fas fa-list mr-2"></i> Pilih Mode Lain
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Screen Letter Overlay (Pop-up Suara) -->
+    <div id="fullScreenOverlay" class="fixed inset-0 z-50 hidden flex-col items-center justify-center bg-indigo-950/95 backdrop-blur-md cursor-pointer transition-opacity duration-300 p-4" onclick="closeFullScreenLetter()">
+        <div class="text-white text-center animate-pop flex flex-col items-center justify-center w-full max-w-3xl">
+            <!-- Teks Arab Besar dengan unit ukuran responsif (vw) agar tidak terpotong di HP -->
+            <div id="fsArabText" class="arab-text text-[35vw] sm:text-[30vw] md:text-[25rem] leading-none mb-6 sm:mb-12 drop-shadow-[0_0_40px_rgba(251,191,36,0.6)] text-amber-400"></div>
+            
+            <!-- Teks Latin -->
+            <div class="bg-white/10 px-6 sm:px-10 py-3 sm:py-4 rounded-full backdrop-blur-md border border-white/20 shadow-2xl flex items-center justify-center gap-3 sm:gap-5">
+                <i class="fas fa-volume-up text-xl sm:text-3xl text-amber-300 animate-pulse"></i>
+                <span id="fsLatinText" class="text-2xl sm:text-4xl md:text-6xl font-bold tracking-widest uppercase text-white drop-shadow-md"></span>
+            </div>
+        </div>
+        
+        <!-- Petunjuk Tutup -->
+        <div class="absolute bottom-8 sm:bottom-12 text-white/60 text-xs sm:text-sm animate-pulse flex items-center bg-black/20 px-4 py-2 rounded-full backdrop-blur-sm">
+            <i class="fas fa-hand-pointer mr-2"></i> Ketuk layar untuk menutup
+        </div>
+    </div>
+
+    <script>
+        // --- State Variables ---
+        let currentQuestion;
+        let score = 0;
+        let lives = 3;
+        let currentQuestionNumber = 0;
+        let totalQuestionsPerSession = 10;
+        let activeDataset = [];
+        let fullModeData = []; 
+        let activeModeIndex = 1;
+        let currentScreenState = 'home';
+
+        // --- DOM Elements ---
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const progressIndicator = document.getElementById('progressIndicator');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const gameWinScreen = document.getElementById('gameWinScreen');
+        const gameArea = document.getElementById('gameArea');
+        
+        const homeBtn = document.getElementById('homeBtn');
+        const backBtn = document.getElementById('backBtn');
+        
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const winScoreDisplay = document.getElementById('winScore');
+
+        const homeScreen = document.getElementById('homeScreen');
+        const playMenu = document.getElementById('playMenu');
+        const learnMenu = document.getElementById('learnMenu');
+        const learnGrid = document.getElementById('learnGrid');
+
+        // Full Screen Overlay Elements
+        const fullScreenOverlay = document.getElementById('fullScreenOverlay');
+        const fsArabText = document.getElementById('fsArabText');
+        const fsLatinText = document.getElementById('fsLatinText');
+        let fsTimeout;
+        let currentAudio = null; 
+
+        // --- Databases ---
+        const baseHijaiyah = [
+            { arab: 'ا', latin: 'Alif', base: '' }, { arab: 'ب', latin: 'Ba', base: 'B' },
+            { arab: 'ت', latin: 'Ta', base: 'T' }, { arab: 'ث', latin: 'Tsa', base: 'Ts' },
+            { arab: 'ج', latin: 'Jim', base: 'J' }, { arab: 'ح', latin: 'Ha', base: 'H' },
+            { arab: 'خ', latin: 'Kha', base: 'Kh' }, { arab: 'د', latin: 'Dal', base: 'D' },
+            { arab: 'ذ', latin: 'Dzal', base: 'Dz' }, { arab: 'ر', latin: 'Ra', base: 'R' },
+            { arab: 'ز', latin: 'Za', base: 'Z' }, { arab: 'س', latin: 'Sin', base: 'S' },
+            { arab: 'ش', latin: 'Syin', base: 'Sy' }, { arab: 'ص', latin: 'Shad', base: 'Sh' },
+            { arab: 'ض', latin: 'Dhad', base: 'Dh' }, { arab: 'ط', latin: 'Tha', base: 'Th' },
+            { arab: 'ظ', latin: 'Zha', base: 'Zh' }, { arab: 'ع', latin: 'Ain', base: '\'' },
+            { arab: 'غ', latin: 'Ghain', base: 'Gh' }, { arab: 'ف', latin: 'Fa', base: 'F' },
+            { arab: 'ق', latin: 'Qaf', base: 'Q' }, { arab: 'ك', latin: 'Kaf', base: 'K' },
+            { arab: 'ل', latin: 'Lam', base: 'L' }, { arab: 'م', latin: 'Mim', base: 'M' },
+            { arab: 'ن', latin: 'Nun', base: 'N' }, { arab: 'و', latin: 'Wawu', base: 'W' },
+            { arab: 'هـ', latin: 'Ha', base: 'H' }, { arab: 'ي', latin: 'Ya', base: 'Y' }
+        ];
+
+        const harakat = [
+            { suffix: 'a', symbol: 'َ' }, // Fathah
+            { suffix: 'i', symbol: 'ِ' }, // Kasrah
+            { suffix: 'u', symbol: 'ُ' }  // Dhammah
+        ];
+
+        const baseWords = [
+            { arab: 'كَتَبَ', latin: 'Kataba' }, { arab: 'قَرَأَ', latin: 'Qara\'a' }, 
+            { arab: 'جَلَسَ', latin: 'Jalasa' }, { arab: 'دَخَلَ', latin: 'Dakhala' },
+            { arab: 'خَرَجَ', latin: 'Kharaja' }, { arab: 'ذَهَبَ', latin: 'Dzahaba' },
+            { arab: 'رَجَعَ', latin: 'Raja\'a' }, { arab: 'نَظَرَ', latin: 'Nazhara' },
+            { arab: 'سَمِعَ', latin: 'Sami\'a' }, { arab: 'فَعَلَ', latin: 'Fa\'ala' },
+            { arab: 'أَكَلَ', latin: 'Akala' }, { arab: 'شَرِبَ', latin: 'Syariba' },
+            { arab: 'غَسَلَ', latin: 'Ghasala' }, { arab: 'فَتَحَ', latin: 'Fataha' },
+            { arab: 'عَرَفَ', latin: 'Arafa' }
+        ];
+
+        const separatedData = [
+            { arab: 'كَ - تَ - بَ', latin: 'Kataba' }, { arab: 'قَ - رَ - أَ', latin: 'Qara\'a' },
+            { arab: 'جَ - لَ - سَ', latin: 'Jalasa' }, { arab: 'دَ - خَ - لَ', latin: 'Dakhala' },
+            { arab: 'خَ - رَ - جَ', latin: 'Kharaja' }, { arab: 'ذَ - هَ - بَ', latin: 'Dzahaba' },
+            { arab: 'رَ - جَ - عَ', latin: 'Raja\'a' }, { arab: 'نَ - ظَ - رَ', latin: 'Nazhara' },
+            { arab: 'سَ - مِ - عَ', latin: 'Sami\'a' }, { arab: 'فَ - عَ - لَ', latin: 'Fa\'ala' },
+            { arab: 'أَ - كَ - لَ', latin: 'Akala' }, { arab: 'شَ - رِ - بَ', latin: 'Syariba' },
+            { arab: 'غَ - سَ - لَ', latin: 'Ghasala' }, { arab: 'فَ - تَ - حَ', latin: 'Fataha' },
+            { arab: 'عَ - رَ - فَ', latin: 'Arafa' }
+        ];
+
+        const dataMode5 = [
+            { arab: 'هَذَا كِتَابٌ', latin: 'Hadza kitabun' }, { arab: 'أَنَا طَالِبٌ', latin: 'Ana thalibun' },
+            { arab: 'الْبَيْتُ كَبِيرٌ', latin: 'Al-baitu kabirun' }, { arab: 'هُوَ مُعَلِّمٌ', latin: 'Huwa mu\'allimun' },
+            { arab: 'السَّمَاءُ صَافِيَةٌ', latin: 'As-sama\'u shafiyatun' }, { arab: 'هَذِهِ مَدْرَسَةٌ', latin: 'Hadzihi madrasatun' },
+            { arab: 'الشَّمْسُ مُشْرِقَةٌ', latin: 'Asy-syamsu musyriqatun' }, { arab: 'الْقَمَرُ مُنِيرٌ', latin: 'Al-qamaru munirun' },
+            { arab: 'الطَّالِبُ ذَكِيٌّ', latin: 'Ath-thalibu dzakiyyun' }, { arab: 'الْوَلَدُ صَالِحٌ', latin: 'Al-waladu shalihun' },
+            { arab: 'الْبِنْتُ جَمِيلَةٌ', latin: 'Al-bintu jamilatun' }, { arab: 'الْبَابُ مَفْتُوحٌ', latin: 'Al-babu maftuhun' },
+            { arab: 'النَّافِذَةُ مُغْلَقَةٌ', latin: 'An-nafidzatu mughlaqatun' }, { arab: 'الْمَاءُ بَارِدٌ', latin: 'Al-ma\'u baridun' },
+            { arab: 'الْقَهْوَةُ حَارَّةٌ', latin: 'Al-qahwatu harratun' }, { arab: 'الْمَسْجِدُ قَرِيبٌ', latin: 'Al-masjidu qaribun' },
+            { arab: 'السُّوقُ بَعِيدٌ', latin: 'As-suqu ba\'idun' }, { arab: 'اللَّهُ أَكْبَرُ', latin: 'Allahu akbar' },
+            { arab: 'سُبْحَانَ اللَّهِ', latin: 'Subhanallah' }, { arab: 'الْحَمْدُ لِلَّهِ', latin: 'Alhamdulillah' },
+            { arab: 'ذَهَبَ أَحْمَدُ إِلَى الْمَدْرَسَةِ', latin: 'Dzahaba Ahmadu ilal madrasati' },
+            { arab: 'تَعَلَّمَ الْقُرْآنَ فِي الْمَسْجِدِ', latin: 'Ta\'allamal qur\'ana fil masjidi' },
+            { arab: 'هَذَا بَيْتِي', latin: 'Hadza baiti' }, { arab: 'بَيْتِي جَمِيلٌ جِدًّا', latin: 'Baiti jamilun jiddan' },
+            { arab: 'قَامَ زَيْدٌ مِنَ النَّوْمِ', latin: 'Qama Zaidun minan naumi' },
+            { arab: 'تَوَضَّأَ لِلصَّلَاةِ', latin: 'Tawadhdha\'a lish-shalati' },
+            { arab: 'قَرَأْتُ الْكِتَابَ فِي الْمَكْتَبَةِ', latin: 'Qara\'tul kitaba fil maktabati' },
+            { arab: 'رَجَعْتُ إِلَى الْبَيْتِ', latin: 'Raja\'tu ilal baiti' }
+        ];
+
+        const dataMode6 = [
+            { arab: 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ', latin: 'Bismillahir rahmanir rahim' },
+            { arab: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ', latin: 'Alhamdulillahi rabbil \'alamin' },
+            { arab: 'الرَّحْمَنِ الرَّحِيمِ', latin: 'Ar-rahmanir rahim' },
+            { arab: 'مَالِكِ يَوْمِ الدِّينِ', latin: 'Maliki yaumid din' },
+            { arab: 'إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ', latin: 'Iyyaka na\'budu wa iyyaka nasta\'in' },
+            { arab: 'اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ', latin: 'Ihdinash shirathal mustaqim' },
+            { arab: 'قُلْ هُوَ اللَّهُ أَحَدٌ', latin: 'Qul huwallahu ahad' },
+            { arab: 'اللَّهُ الصَّمَدُ', latin: 'Allahush shamad' },
+            { arab: 'لَمْ يَلِدْ وَلَمْ يُولَدْ', latin: 'Lam yalid walam yulad' },
+            { arab: 'وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ', latin: 'Walam yakun lahu kufuwan ahad' }
+        ];
+
+        // --- Data Generators ---
+        const generateMode1Data = () => [...baseHijaiyah];
+
+        const generateMode2Data = () => {
+            let data = [];
+            baseHijaiyah.forEach(h => {
+                harakat.forEach(har => {
+                    let resultVocal = '';
+                    if (h.latin === 'Alif') resultVocal = har.suffix.toUpperCase();
+                    else if (h.latin === 'Ain') resultVocal = '\'' + har.suffix.toUpperCase();
+                    else resultVocal = h.base + har.suffix;
+                    
+                    data.push({
+                        arab: h.arab + har.symbol,
+                        latin: resultVocal,
+                        harakatType: har.suffix
+                    });
+                });
+            });
+            return data;
+        };
+
+        const generateRandomQuestionsPool = (baseDataset, poolSize = 100) => {
+            let pool = [];
+            while (pool.length < poolSize) {
+                let shuffled = [...baseDataset].sort(() => 0.5 - Math.random());
+                pool = pool.concat(shuffled);
+            }
+            return pool.slice(0, totalQuestionsPerSession);
+        };
+
+        // --- Navigation Functions ---
+        function showHomeScreen() {
+            currentScreenState = 'home';
+            homeScreen.classList.remove('hidden');
+            playMenu.classList.add('hidden');
+            learnMenu.classList.add('hidden');
+            gameArea.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            gameWinScreen.classList.add('hidden');
+            homeBtn.classList.add('hidden');
+            backBtn.classList.add('hidden');
+        }
+
+        function showPlayMenu() {
+            currentScreenState = 'playMenu';
+            homeScreen.classList.add('hidden');
+            playMenu.classList.remove('hidden');
+            learnMenu.classList.add('hidden');
+            gameArea.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            gameWinScreen.classList.add('hidden');
+            homeBtn.classList.remove('hidden');
+            backBtn.classList.remove('hidden');
+        }
+
+        function showLearnMenu() {
+            currentScreenState = 'learnMenu';
+            homeScreen.classList.add('hidden');
+            learnMenu.classList.remove('hidden');
+            homeBtn.classList.remove('hidden');
+            backBtn.classList.remove('hidden');
+            
+            // Generate Grid if empty
+            if (learnGrid.children.length === 0) {
+                baseHijaiyah.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-gradient-to-br from-white to-indigo-50 border border-indigo-100 rounded-2xl p-3 sm:p-5 flex flex-col items-center justify-center hover:from-indigo-50 hover:to-indigo-100 hover:border-indigo-300 transition-all duration-300 transform hover:-translate-y-1 sm:hover:-translate-y-2 hover:shadow-xl shadow-md cursor-pointer group';
+                    card.onclick = () => showFullScreenLetter(item.arab, item.latin);
+                    card.innerHTML = `
+                        <span class="arab-text text-4xl sm:text-5xl md:text-6xl text-indigo-700 mb-2 sm:mb-4 group-hover:scale-110 transition-transform duration-300 drop-shadow-sm">${item.arab}</span>
+                        <div class="w-full bg-white px-1 sm:px-2 py-1 rounded-full shadow-inner border border-indigo-50 text-center truncate">
+                            <span class="text-[10px] sm:text-xs md:text-sm font-bold text-indigo-900 tracking-wider uppercase">${item.latin}</span>
+                        </div>
+                    `;
+                    learnGrid.appendChild(card);
+                });
+            }
+        }
+
+        function showFullScreenLetter(arab, latin) {
+            fsArabText.textContent = arab;
+            fsLatinText.textContent = latin;
+            
+            playArabicSound(arab, latin);
+            
+            fullScreenOverlay.classList.remove('hidden');
+            fullScreenOverlay.classList.add('flex');
+            
+            clearTimeout(fsTimeout);
+            fsTimeout = setTimeout(() => {
+                closeFullScreenLetter();
+            }, 4000); 
+        }
+
+        function playArabicSound(arab, latin) {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); 
+            }
+
+            const fileName = latin.toLowerCase().replace(/[^a-z0-9]/g, '');
+            currentAudio = new Audio(`audio/${fileName}.mp3`);
+            
+            currentAudio.play().catch(error => {
+                console.warn(`File audio/${fileName}.mp3 tidak ditemukan. Memutar Fallback TTS...`);
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(arab);
+                    utterance.lang = 'ar-SA'; 
+                    utterance.rate = 0.8; 
+                    window.speechSynthesis.speak(utterance);
+                }
+            });
+        }
+
+        function closeFullScreenLetter() {
+            fullScreenOverlay.classList.add('hidden');
+            fullScreenOverlay.classList.remove('flex');
+            clearTimeout(fsTimeout);
+            
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        homeBtn.addEventListener('click', showHomeScreen);
+        
+        backBtn.addEventListener('click', () => {
+            if (currentScreenState === 'learnMenu' || currentScreenState === 'playMenu') {
+                showHomeScreen();
+            } else if (currentScreenState === 'game' || currentScreenState === 'end') {
+                showPlayMenu();
+            }
+        });
+
+        // --- Game Logic ---
+        function startGame(modeIndex) {
+            activeModeIndex = modeIndex;
+            initGame();
+        }
+
+        function initGame() {
+            currentScreenState = 'game';
+            score = 0;
+            lives = 3;
+            currentQuestionNumber = 0;
+            
+            scoreDisplay.textContent = score;
+            updateLivesDisplay();
+            
+            homeScreen.classList.add('hidden');
+            playMenu.classList.add('hidden');
+            gameArea.classList.remove('hidden');
+            gameOverScreen.classList.add('hidden');
+            gameWinScreen.classList.add('hidden');
+            homeBtn.classList.remove('hidden');
+            backBtn.classList.remove('hidden');
+            
+            let baseDataset = [];
+            switch(activeModeIndex) {
+                case 1: baseDataset = generateMode1Data(); break;
+                case 2: baseDataset = generateMode2Data(); break;
+                case 3: baseDataset = [...separatedData]; break;
+                case 4: baseDataset = [...baseWords]; break;
+                case 5: baseDataset = [...dataMode5]; break;
+                case 6: baseDataset = [...dataMode6]; break;
+                default: baseDataset = generateMode1Data();
+            }
+            
+            fullModeData = [...baseDataset];
+            activeDataset = generateRandomQuestionsPool(baseDataset, totalQuestionsPerSession);
+            nextQuestion();
+        }
+
+        function updateLivesDisplay() {
+            livesDisplay.textContent = lives;
+            const heartIcon = document.querySelector('.fa-heart');
+            if (lives <= 1) {
+                heartIcon.classList.add('text-red-600', 'animate-pulse');
+                heartIcon.classList.remove('text-rose-500', 'heart-pulse');
+            } else {
+                heartIcon.classList.remove('text-red-600', 'animate-pulse');
+                heartIcon.classList.add('text-rose-500', 'heart-pulse');
+            }
+        }
+
+        // Ukuran font dibuat responsif menyesuaikan perangkat
+        function adjustFontSize(text) {
+            const length = text.length;
+            if (length > 40) return 'text-xl sm:text-2xl md:text-3xl lg:text-4xl';
+            if (length > 25) return 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl';
+            if (length > 15) return 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl';
+            return 'text-5xl sm:text-6xl md:text-7xl lg:text-8xl';
+        }
+
+        function nextQuestion() {
+            if (lives <= 0) {
+                endGame(false);
+                return;
+            }
+            if (currentQuestionNumber >= totalQuestionsPerSession || activeDataset.length === 0) {
+                endGame(true);
+                return;
+            }
+
+            currentQuestionNumber++;
+            progressIndicator.textContent = `${currentQuestionNumber}/${totalQuestionsPerSession}`;
+            currentQuestion = activeDataset.shift();
+            
+            questionText.className = `arab-text font-bold text-indigo-900 text-center leading-tight mb-0 w-full ${adjustFontSize(currentQuestion.arab)}`;
+            questionText.textContent = currentQuestion.arab;
+            
+            const options = [currentQuestion.latin];
+            let wrongOptionsPool = [...fullModeData];
+            
+            if (activeModeIndex === 2) {
+                wrongOptionsPool = fullModeData.filter(item => 
+                    item.harakatType === currentQuestion.harakatType && item.latin !== currentQuestion.latin
+                );
+            } else {
+                wrongOptionsPool = fullModeData.filter(item => item.latin !== currentQuestion.latin);
+            }
+            
+            wrongOptionsPool.sort(() => 0.5 - Math.random());
+            
+            for (let i = 0; i < 3 && i < wrongOptionsPool.length; i++) {
+                if(!options.includes(wrongOptionsPool[i].latin)) {
+                    options.push(wrongOptionsPool[i].latin);
+                }
+            }
+            options.sort(() => 0.5 - Math.random());
+            
+            optionsContainer.innerHTML = '';
+            options.forEach(option => {
+                const button = document.createElement('button');
+                // Tombol responsif: padding dan ukuran text berbeda antara Mobile & Tablet/Laptop
+                button.className = 'option-btn bg-white border-2 border-indigo-100 text-gray-700 font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl text-sm sm:text-base md:text-lg w-full flex items-center justify-center min-h-[60px] sm:min-h-[70px]';
+                button.textContent = option;
+                button.onclick = () => checkAnswer(button, option);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function checkAnswer(button, selectedAnswer) {
+            const buttons = optionsContainer.querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = true);
+            
+            if (selectedAnswer === currentQuestion.latin) {
+                button.classList.add('correct');
+                score += 10;
+                scoreDisplay.textContent = score;
+                
+                const originalText = button.textContent;
+                button.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${originalText}`;
+                
+                setTimeout(nextQuestion, 1000);
+            } else {
+                button.classList.add('wrong');
+                lives--;
+                updateLivesDisplay();
+                
+                buttons.forEach(btn => {
+                    if (btn.textContent === currentQuestion.latin) {
+                        btn.classList.add('correct');
+                    }
+                });
+                
+                const originalText = button.textContent;
+                button.innerHTML = `<i class="fas fa-times-circle mr-2"></i> ${originalText}`;
+                
+                setTimeout(nextQuestion, 1500); 
+            }
+        }
+
+        function endGame(isWin) {
+            currentScreenState = 'end';
+            gameArea.classList.add('hidden');
+            if(isWin) {
+                gameWinScreen.classList.remove('hidden');
+                winScoreDisplay.textContent = score;
+            } else {
+                gameOverScreen.classList.remove('hidden');
+                finalScoreDisplay.textContent = score;
+            }
+        }
+
+        // Initialize Home Screen on load
+        showHomeScreen();
+    </script>
+</body>
+</html>
