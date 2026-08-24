@@ -425,6 +425,8 @@
 
         // --- Navigation Functions ---
         function showHomeScreen() {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
             currentScreenState = 'home';
             homeScreen.classList.remove('hidden');
             playMenu.classList.add('hidden');
@@ -437,6 +439,8 @@
         }
 
         function showPlayMenu() {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
             currentScreenState = 'playMenu';
             homeScreen.classList.add('hidden');
             playMenu.classList.remove('hidden');
@@ -449,6 +453,8 @@
         }
 
         function showLearnMenu() {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
             currentScreenState = 'learnMenu';
             homeScreen.classList.add('hidden');
             learnMenu.classList.remove('hidden');
@@ -547,6 +553,42 @@
                     window.speechSynthesis.speak(utterance);
                 }
             });
+        }
+
+        function playGameFeedbackSound(isCorrect, question) {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+
+            const soundText = isCorrect 
+                ? `Benar! Ini lafadz ${question.latin}`
+                : `Salah! Yang benar adalah lafadz ${question.latin}`;
+
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(soundText);
+                utterance.lang = 'id-ID';
+                utterance.rate = 0.95;
+                
+                // Setelah kalimat petunjuk selesai, putar file MP3 atau suara pelafalan Arab
+                utterance.onend = () => {
+                    const fileName = question.latin.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    currentAudio = new Audio(`audio/${fileName}.mp3`);
+                    currentAudio.play().catch(() => {
+                        if ('speechSynthesis' in window) {
+                            const arabUtterance = new SpeechSynthesisUtterance(question.arab);
+                            arabUtterance.lang = 'ar-SA';
+                            arabUtterance.rate = 0.8;
+                            window.speechSynthesis.speak(arabUtterance);
+                        }
+                    });
+                };
+
+                window.speechSynthesis.speak(utterance);
+            }
         }
 
         function closeFullScreenLetter() {
@@ -698,7 +740,8 @@
                 const originalText = button.textContent;
                 button.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${originalText}`;
                 
-                setTimeout(nextQuestion, 1000);
+                playGameFeedbackSound(true, currentQuestion);
+                setTimeout(nextQuestion, 2500);
             } else {
                 button.classList.add('wrong');
                 lives--;
@@ -713,7 +756,8 @@
                 const originalText = button.textContent;
                 button.innerHTML = `<i class="fas fa-times-circle mr-2"></i> ${originalText}`;
                 
-                setTimeout(nextQuestion, 1500); 
+                playGameFeedbackSound(false, currentQuestion);
+                setTimeout(nextQuestion, 3200); 
             }
         }
 
